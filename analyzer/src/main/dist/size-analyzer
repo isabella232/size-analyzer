@@ -8,6 +8,17 @@ if ! command -v java >/dev/null 2>&1; then
   exit 1
 fi
 
-scriptdir="$( cd -P -- "$(dirname -- "$(command -v -- "$0")")" && pwd -P )"
+if command -v readlink >/dev/null 2>&1 && readlink -f $0 >/dev/null 2>&1; then
+  scriptdir="$(dirname -- "$(command -v -- "$(readlink -f $0)")")"
+else
+  if command -v perl >/dev/null 2>&1 && perl -MCwd -e 1 2>/dev/null; then
+    scriptdir="$(dirname -- "$(perl -MCwd -e 'print Cwd::abs_path shift' "$0")")"
+  else
+    echo "WARNING - Utilities to resolve symbolic links not found. If issues"
+    echo "arise finding the JAR file, please ensure that the working directory"
+    echo "of this script does not contain a symlink."
+    scriptdir="$(cd -P -- "$(dirname -- "$(command -v -- "$0")")" && pwd -P)"
+  fi
+fi
 
 java -jar "$scriptdir/bin/analyzer.jar" "$@"

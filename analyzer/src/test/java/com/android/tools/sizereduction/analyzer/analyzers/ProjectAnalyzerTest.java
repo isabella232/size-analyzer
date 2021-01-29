@@ -70,6 +70,7 @@ public final class ProjectAnalyzerTest {
     GradleContext context =
         GradleContext.builder()
             .setMinSdkVersion(15)
+            .setTargetSdkVersion(28)
             .setOnDemand(false)
             .setPluginType(GradleContext.PluginType.APPLICATION)
             .setProguardConfigs(
@@ -145,6 +146,7 @@ public final class ProjectAnalyzerTest {
     GradleContext appContext =
         GradleContext.builder()
             .setMinSdkVersion(15)
+            .setTargetSdkVersion(28)
             .setOnDemand(false)
             .setPluginType(GradleContext.PluginType.APPLICATION)
             .setProguardConfigs(

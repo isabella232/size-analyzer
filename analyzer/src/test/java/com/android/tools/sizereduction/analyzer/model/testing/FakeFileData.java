@@ -18,7 +18,7 @@ package com.android.tools.sizereduction.analyzer.model.testing;
 
 import com.android.tools.sizereduction.analyzer.model.FileData;
 import com.google.auto.value.AutoValue;
-import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,7 +33,7 @@ public abstract class FakeFileData implements FileData {
   /** Returns a builder with a default dummy input stream and size. */
   public static Builder builder() {
     return new AutoValue_FakeFileData.Builder()
-        .setInputStream(new ByteArrayInputStream(new byte[0]))
+        .setInputStream(new UnreadableInputStream())
         .setSize(1L);
   }
 
@@ -71,5 +71,13 @@ public abstract class FakeFileData implements FileData {
     public abstract Builder setSize(long size);
 
     public abstract FakeFileData build();
+  }
+
+  private static class UnreadableInputStream extends InputStream {
+
+    @Override
+    public int read() throws IOException {
+      throw new IOException("This stream is not intended to be read.");
+    }
   }
 }

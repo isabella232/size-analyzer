@@ -57,11 +57,15 @@ public final class WebpAutoFix implements AutoFix {
       CountingInputStream countingStream = new CountingInputStream(inputStream);
       BufferedImage bufferedImage = WebpSuggester.safelyParseImage(countingStream);
 
-      long oldSize = countingStream.getCount();
       byte[] webpBytes = webpConverter.encodeLosslessWebp(bufferedImage);
       Files.write(newFilePath, webpBytes);
-      Files.delete(filePath);
     } catch (IOException | ImageReadException e) {
+      throw new RuntimeException(e);
+    }
+    try {
+      // On Windows we must close the source file before we can delete it
+      Files.delete(filePath);
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }

@@ -45,6 +45,8 @@ public final class GroovyGradleParserTest {
       "gradle_build_files/proguard_configs.build.gradle";
   private static final String VARIABLE_MINSDK_BUILD_FILE =
       "gradle_build_files/variable_minSdkVersion.build.gradle";
+  private static final String VARIABLE_TARGET_BUILD_FILE =
+      "gradle_build_files/missing_targetSdkVersion.build.gradle";
   private static final String COMPLEX_BUILD_FILE = "gradle_build_files/complex.build.gradle";
   private static final String TOP_LEVEL_METHOD_CALL_GRADLE_BUILD_FILE =
       "gradle_build_files/top_level_method_call.build.gradle";
@@ -57,7 +59,7 @@ public final class GroovyGradleParserTest {
   public void parsesPluginType_Application() throws Exception {
     File buildFile = TestUtils.getTestDataFile(APP_BUILD_FILE);
     String content = Files.asCharSource(buildFile, UTF_8).read();
-    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, null).build();
+    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, 1, null).build();
     assertThat(context.getPluginType()).isEqualTo(GradleContext.PluginType.APPLICATION);
   }
 
@@ -65,7 +67,7 @@ public final class GroovyGradleParserTest {
   public void parsesPluginType_DynamicFeature() throws Exception {
     File buildFile = TestUtils.getTestDataFile(DYNAMIC_FEATURE_BUILD_FILE);
     String content = Files.asCharSource(buildFile, UTF_8).read();
-    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, null).build();
+    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, 1, null).build();
     assertThat(context.getPluginType()).isEqualTo(GradleContext.PluginType.DYNAMIC_FEATURE);
   }
 
@@ -73,7 +75,7 @@ public final class GroovyGradleParserTest {
   public void parsesPluginType_Unknown() throws Exception {
     File buildFile = TestUtils.getTestDataFile(PROJECT_BUILD_FILE);
     String content = Files.asCharSource(buildFile, UTF_8).read();
-    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, null).build();
+    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, 1, null).build();
     assertThat(context.getPluginType()).isEqualTo(GradleContext.PluginType.UNKNOWN);
   }
 
@@ -81,15 +83,23 @@ public final class GroovyGradleParserTest {
   public void parsesMinSdkVersion() throws Exception {
     File buildFile = TestUtils.getTestDataFile(APP_BUILD_FILE);
     String content = Files.asCharSource(buildFile, UTF_8).read();
-    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, null).build();
+    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, 1, null).build();
     assertThat(context.getMinSdkVersion()).isEqualTo(15);
+  }
+
+  @Test
+  public void parsesTargetSdkVersion() throws Exception {
+    File buildFile = TestUtils.getTestDataFile(APP_BUILD_FILE);
+    String content = Files.asCharSource(buildFile, UTF_8).read();
+    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, 1, null).build();
+    assertThat(context.getTargetSdkVersion()).isEqualTo(28);
   }
 
   @Test
   public void parsesMinSdkVersionInTupleExpression() throws Exception {
     File buildFile = TestUtils.getTestDataFile(DYNAMIC_FEATURE_BUILD_FILE);
     String content = Files.asCharSource(buildFile, UTF_8).read();
-    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, null).build();
+    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, 1, null).build();
     assertThat(context.getMinSdkVersion()).isEqualTo(14);
   }
 
@@ -97,7 +107,7 @@ public final class GroovyGradleParserTest {
   public void parsesProguardConfigs() throws Exception {
     File buildFile = TestUtils.getTestDataFile(PROGUARD_BUILD_FILE);
     String content = Files.asCharSource(buildFile, UTF_8).read();
-    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, null).build();
+    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, 1, null).build();
     ImmutableMap<String, ProguardConfig> expectedMap =
         ImmutableMap.of(
             "release",
@@ -126,7 +136,7 @@ public final class GroovyGradleParserTest {
   public void parsesComplexBuildFile() throws Exception {
     File buildFile = TestUtils.getTestDataFile(COMPLEX_BUILD_FILE);
     String content = Files.asCharSource(buildFile, UTF_8).read();
-    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, null).build();
+    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, 1, null).build();
     ImmutableMap<String, ProguardConfig> expectedMap =
         ImmutableMap.of(
             "release",
@@ -153,15 +163,25 @@ public final class GroovyGradleParserTest {
     int defaultMinSdkVersion = 345;
     String content = Files.asCharSource(buildFile, UTF_8).read();
     GradleContext context =
-        GroovyGradleParser.parseGradleBuildFile(content, defaultMinSdkVersion, null).build();
+        GroovyGradleParser.parseGradleBuildFile(content, defaultMinSdkVersion, 1, null).build();
     assertThat(context.getMinSdkVersion()).isEqualTo(defaultMinSdkVersion);
+  }
+
+  @Test
+  public void variableTargetSdkVersionDefaultsToDefaultValue() throws Exception {
+    File buildFile = TestUtils.getTestDataFile(VARIABLE_TARGET_BUILD_FILE);
+    int defaultTargetSdkVersion = 345;
+    String content = Files.asCharSource(buildFile, UTF_8).read();
+    GradleContext context =
+        GroovyGradleParser.parseGradleBuildFile(content, 1, defaultTargetSdkVersion, null).build();
+    assertThat(context.getTargetSdkVersion()).isEqualTo(defaultTargetSdkVersion);
   }
 
   @Test
   public void setsAndroidPluginVersion() throws Exception {
     File buildFile = TestUtils.getTestDataFile(PROJECT_BUILD_FILE);
     String content = Files.asCharSource(buildFile, UTF_8).read();
-    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, null).build();
+    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, 1, null).build();
 
     assertThat(context.getAndroidPluginVersion()).isNotNull();
     assertThat(context.getAndroidPluginVersion().getMajorVersion()).isEqualTo(3);
@@ -172,7 +192,7 @@ public final class GroovyGradleParserTest {
   public void setsBundleConfigAllFalse() throws Exception {
     File buildFile = TestUtils.getTestDataFile(DISABLE_SPLITS_BUILD_FILE);
     String content = Files.asCharSource(buildFile, UTF_8).read();
-    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, null).build();
+    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, 1, null).build();
 
     assertThat(context.getBundleConfig().getAbiSplitEnabled()).isFalse();
     assertThat(context.getBundleConfig().getDensitySplitEnabled()).isFalse();
@@ -183,7 +203,7 @@ public final class GroovyGradleParserTest {
   public void setsBundleConfigEnabledByDefault() throws Exception {
     File buildFile = TestUtils.getTestDataFile(APP_BUILD_FILE);
     String content = Files.asCharSource(buildFile, UTF_8).read();
-    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, null).build();
+    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, 1, null).build();
 
     assertThat(context.getBundleConfig().getAbiSplitEnabled()).isTrue();
     assertThat(context.getBundleConfig().getDensitySplitEnabled()).isTrue();
@@ -194,7 +214,7 @@ public final class GroovyGradleParserTest {
   public void setsBundleConfigMixEnabled() throws Exception {
     File buildFile = TestUtils.getTestDataFile(MIX_BUNDLE_SPLITS_ENABLED_BUILD_FILE);
     String content = Files.asCharSource(buildFile, UTF_8).read();
-    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, null).build();
+    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, 1, null).build();
 
     assertThat(context.getBundleConfig().getAbiSplitEnabled()).isTrue();
     assertThat(context.getBundleConfig().getDensitySplitEnabled()).isTrue();
@@ -205,7 +225,7 @@ public final class GroovyGradleParserTest {
   public void setsBundleConfigLineNumbersAll() throws Exception {
     File buildFile = TestUtils.getTestDataFile(DISABLE_SPLITS_BUILD_FILE);
     String content = Files.asCharSource(buildFile, UTF_8).read();
-    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, null).build();
+    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, 1, null).build();
 
     assertThat(context.getBundleConfig().getBundleConfigLocation().getAbiSplitLineNumber())
         .isEqualTo(21);
@@ -219,7 +239,7 @@ public final class GroovyGradleParserTest {
   public void setsBundleConfigLineNumberForNone() throws Exception {
     File buildFile = TestUtils.getTestDataFile(APP_BUILD_FILE);
     String content = Files.asCharSource(buildFile, UTF_8).read();
-    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, null).build();
+    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, 1, null).build();
 
     assertThat(context.getBundleConfig().getBundleConfigLocation().getAbiSplitLineNumber())
         .isNull();
@@ -233,7 +253,7 @@ public final class GroovyGradleParserTest {
   public void setsBundleConfigLineNumberMixed() throws Exception {
     File buildFile = TestUtils.getTestDataFile(MIX_BUNDLE_SPLITS_ENABLED_BUILD_FILE);
     String content = Files.asCharSource(buildFile, UTF_8).read();
-    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, null).build();
+    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, 1, null).build();
 
     assertThat(context.getBundleConfig().getBundleConfigLocation().getAbiSplitLineNumber())
         .isNull();
@@ -247,7 +267,7 @@ public final class GroovyGradleParserTest {
   public void parseToplevelMethodCall() throws Exception {
     File buildFile = TestUtils.getTestDataFile(TOP_LEVEL_METHOD_CALL_GRADLE_BUILD_FILE);
     String content = Files.asCharSource(buildFile, UTF_8).read();
-    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, null).build();
+    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, 1, null).build();
     assertThat(context).isNotNull();
   }
 
@@ -255,7 +275,7 @@ public final class GroovyGradleParserTest {
   public void setsLibraryDependencies() throws Exception {
     File buildFile = TestUtils.getTestDataFile(LIBRARY_DEPENDENCY_FILE);
     String content = Files.asCharSource(buildFile, UTF_8).read();
-    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, null).build();
+    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, 1, null).build();
 
     ImmutableSet<Library> expectedSet =
         ImmutableSet.of(
@@ -315,7 +335,7 @@ public final class GroovyGradleParserTest {
   public void setsEmbedsWearApk() throws Exception {
     File buildFile = TestUtils.getTestDataFile(EMBEDS_WEAR_APK_GRADLE_BUILD_FILE);
     String content = Files.asCharSource(buildFile, UTF_8).read();
-    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, null).build();
+    GradleContext context = GroovyGradleParser.parseGradleBuildFile(content, 1, 1, null).build();
 
     assertThat(context.getEmbedsWearApk()).isTrue();
   }

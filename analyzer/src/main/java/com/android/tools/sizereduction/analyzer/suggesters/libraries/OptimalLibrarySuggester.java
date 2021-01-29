@@ -22,7 +22,6 @@ import com.android.bundle.AppDependenciesOuterClass.AppDependencies;
 import com.android.bundle.AppDependenciesOuterClass.Library;
 import com.android.bundle.AppDependenciesOuterClass.MavenLibrary;
 import com.android.tools.build.bundletool.model.AppBundle;
-import com.android.tools.build.bundletool.model.InputStreamSupplier;
 import com.android.tools.sizereduction.analyzer.SuggestionPayload.Payload;
 import com.android.tools.sizereduction.analyzer.model.BundleContext;
 import com.android.tools.sizereduction.analyzer.model.GradleContext;
@@ -36,6 +35,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.io.ByteSource;
+import com.google.protobuf.ExtensionRegistry;
+import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -131,16 +133,24 @@ public final class OptimalLibrarySuggester implements BundleSuggester, ProjectSu
   }
 
   private static Optional<AppDependencies> readAppDependencies(AppBundle bundle) {
-    Optional<InputStreamSupplier> inputStreamSupplier =
+    Optional<ByteSource> byteSource =
         bundle
             .getBundleMetadata()
-            .getFileData("com.android.tools.build.libraries", "dependencies.pb");
+            .getFileAsByteSource("com.android.tools.build.libraries", "dependencies.pb");
 
-    if (!inputStreamSupplier.isPresent()) {
+    if (!byteSource.isPresent()) {
       return Optional.empty();
     }
-    try (InputStream entryContent = inputStreamSupplier.get().get()) {
-      return Optional.of(AppDependencies.parseDelimitedFrom(entryContent));
+
+    try {
+      try (InputStream entryContent = byteSource.get().openBufferedStream()) {
+        return Optional.of(
+            AppDependencies.parseFrom(entryContent, ExtensionRegistry.getEmptyRegistry()));
+      } catch (InvalidProtocolBufferException e) {
+        try (InputStream entryContent = byteSource.get().openBufferedStream()) {
+          return Optional.of(AppDependencies.parseDelimitedFrom(entryContent));
+        }
+      }
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }

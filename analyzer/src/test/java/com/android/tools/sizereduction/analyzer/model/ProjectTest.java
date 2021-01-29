@@ -65,7 +65,7 @@ public final class ProjectTest {
     Project parentProject =
         Project.builder()
             .setProjectDirectory(simpleBundleDir)
-            .setContext(GradleContext.create(10))
+            .setContext(GradleContext.create(10, 12))
             .build();
     Project project = Project.create(simpleBundleDir, parentProject);
 
@@ -79,7 +79,7 @@ public final class ProjectTest {
     Project parentProject =
         Project.builder()
             .setProjectDirectory(featureDir)
-            .setContext(GradleContext.create(10))
+            .setContext(GradleContext.create(10, 12))
             .build();
     Project project = Project.create(featureDir, parentProject);
 

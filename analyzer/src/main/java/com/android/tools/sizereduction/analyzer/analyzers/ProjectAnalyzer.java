@@ -98,7 +98,7 @@ public final class ProjectAnalyzer implements ArtifactAnalyzer {
         }
       } else {
         GradleContext context =
-            project != null ? project.getContext() : GradleContext.create(1, false);
+            project != null ? project.getContext() : GradleContext.create(1, 1, false);
         Path pathWithinModule =
             project != null
                 ? Paths.get(project.getProjectDirectory().getPath())

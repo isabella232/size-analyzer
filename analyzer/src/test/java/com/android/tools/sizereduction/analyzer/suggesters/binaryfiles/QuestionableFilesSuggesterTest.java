@@ -50,12 +50,15 @@ public class QuestionableFilesSuggesterTest {
   private static final String PROJECT_ASSET_FILE = "src/main/assets/foo.bin";
   private static final String PROJECT_RES_FILE = "src/main/res/raw/foo.bin";
   private static final String JAVA_FILE = "src/main/java/Main.java";
+  private static final String KOTLIN_FILE = "src/main/kotlin/Main.kt";
   private static final String PROJECT_MANIFEST_FILE = "src/main/AndroidManifest.xml";
   private static final String PROJECT_MISC_FILE = "src/main/resources/foobar.txt";
   private static final String PROJECT_ROOT_MISC_FILE = "readme.md";
   private static final String OTHER_MISC_FILE = "app/app.iml";
   private static final String GRADLE_WRAPPER = "gradle/wrapper/gradle-wrapper.jar";
   private static final String BUILD_FILE = "build/outputs/foo.apk";
+  private static final String DS_STORE_FILE = "src/main/whatever/.DS_Store";
+  private static final String JNI_LIB_FILE = "src/main/jniLibs/armeabi-v7a/aalib.so";
 
   private static final long LARGE_FILE_SIZE = 1025L;
   private static final long SMALL_FILE_SIZE = 1023L;
@@ -131,6 +134,11 @@ public class QuestionableFilesSuggesterTest {
   }
 
   @Test
+  public void validKotlinFile() {
+    testValidProjectFile(KOTLIN_FILE);
+  }
+
+  @Test
   public void validProjectManifestFile() {
     testValidProjectFile(PROJECT_MANIFEST_FILE);
   }
@@ -148,6 +156,33 @@ public class QuestionableFilesSuggesterTest {
   @Test
   public void validDirectoryFile() {
     testValidProjectFile(OTHER_MISC_FILE);
+  }
+
+  @Test
+  public void validDsStoreFile() {
+    testValidProjectFile(DS_STORE_FILE);
+  }
+
+  @Test
+  public void validJniLibFile() {
+    testValidProjectFile(JNI_LIB_FILE);
+  }
+
+  @Test
+  public void validBuildSrcFile() {
+    // Since buildSrc files are not included in the APK, a file within the src/main of buildSrc
+    // that would otherwise be questionable cannot contribute to the size of the app
+    FakeFileData fileData =
+        FakeFileData.builder()
+            .setPathWithinRoot(Paths.get("buildSrc/src/main/troy/personal_notes.doc"))
+            .setPathWithinModule(Paths.get("src/main/troy/personal_notes.doc"))
+            .setSize(LARGE_FILE_SIZE)
+            .build();
+
+    assertThat(
+            new QuestionableFilesSuggester()
+                .processProjectEntry(GradleContext.create(1, 1, false), fileData))
+        .isEmpty();
   }
 
   @Test
@@ -181,7 +216,7 @@ public class QuestionableFilesSuggesterTest {
     FileData fileData = FakeFileData.builder(filename).setSize(LARGE_FILE_SIZE).build();
     assertThat(
             new QuestionableFilesSuggester()
-                .processProjectEntry(GradleContext.create(1, false), fileData))
+                .processProjectEntry(GradleContext.create(1, 1, false), fileData))
         .isEmpty();
   }
 
@@ -205,7 +240,7 @@ public class QuestionableFilesSuggesterTest {
     FileData fileData = FakeFileData.builder(filename).setSize(LARGE_FILE_SIZE).build();
     List<Suggestion> suggestions =
         new QuestionableFilesSuggester()
-            .processProjectEntry(GradleContext.create(1, false), fileData);
+            .processProjectEntry(GradleContext.create(1, 1, false), fileData);
     assertThat(suggestions)
         .containsExactly(
             Suggestion.create(

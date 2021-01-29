@@ -27,6 +27,7 @@ import com.android.tools.sizereduction.analyzer.suggesters.Suggestion;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import java.nio.file.Path;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -59,10 +60,15 @@ public class QuestionableFilesSuggester implements BundleEntrySuggester, Project
   private static final ImmutableList<Pattern> STANDARD_PROJECT_FILES =
       ImmutableList.of(
           Pattern.compile("^(?!src/main/).*$"), // match anything that does not start with src/main/
-          Pattern.compile("src/main/res/.*"), // res folder is okay
-          Pattern.compile("src/main/assets/.*"), // assets folder is okay
-          Pattern.compile("src/main/java/.*"), // java folder is okay
-          Pattern.compile("src/main/AndroidManifest.xml")); // manifest is okay
+          Pattern.compile("src/main/res/.*"),
+          Pattern.compile("src/main/assets/.*"),
+          Pattern.compile("src/main/java/.*"),
+          Pattern.compile("src/main/kotlin/.*"),
+          Pattern.compile("src/main/jniLibs/.*"),
+          Pattern.compile("src/main/AndroidManifest.xml"),
+          Pattern.compile(".*/.DS_Store")); // MacOS metadata file
+  private static final ImmutableList<Pattern> UNPACKAGED_PROJECT_ROOTS =
+      ImmutableList.of(Pattern.compile("buildSrc/.*")); // For Kotlin build DSL, not included in APK
 
   @Override
   public ImmutableList<Suggestion> processBundleZipEntry(BundleContext context, FileData fileData) {
@@ -114,9 +120,14 @@ public class QuestionableFilesSuggester implements BundleEntrySuggester, Project
   }
 
   private static boolean isStandardProjectFile(FileData fileData) {
-    Path path = fileData.getPathWithinModule();
+    Path pathWithinModule = fileData.getPathWithinModule();
+    Path pathWithinRoot = fileData.getPathWithinRoot();
+
     return STANDARD_PROJECT_FILES.stream()
-        .map(pattern -> pattern.matcher(path.toString()))
-        .anyMatch(matcher -> matcher.matches());
+            .map(pattern -> pattern.matcher(pathWithinModule.toString()))
+            .anyMatch(Matcher::matches)
+        || UNPACKAGED_PROJECT_ROOTS.stream()
+            .map(pattern -> pattern.matcher(pathWithinRoot.toString()))
+            .anyMatch(matcher -> matcher.matches());
   }
 }

@@ -30,6 +30,7 @@ import com.android.tools.sizereduction.analyzer.suggesters.BundleEntrySuggester;
 import com.android.tools.sizereduction.analyzer.suggesters.ProjectTreeSuggester;
 import com.android.tools.sizereduction.analyzer.suggesters.Suggestion;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.CountingInputStream;
@@ -81,6 +82,12 @@ public class WebpSuggester implements BundleEntrySuggester, ProjectTreeSuggester
       return ImmutableList.of();
     }
 
+    String lowercasePath = Ascii.toLowerCase(fileData.getPathWithinRoot().toString());
+    if (lowercasePath.endsWith(".9.png")) {
+      // 9patch images must be in PNG format
+      return ImmutableList.of();
+    }
+
     try (InputStream inputStream = fileData.getInputStream()) {
       CountingInputStream countingStream = new CountingInputStream(inputStream);
       BufferedImage bufferedImage = safelyParseImage(countingStream);
@@ -127,10 +134,13 @@ public class WebpSuggester implements BundleEntrySuggester, ProjectTreeSuggester
       return ImmutableList.of();
     }
   }
-
+  
   static BufferedImage safelyParseImage(InputStream inputStream) throws ImageReadException {
     try {
       return Imaging.getBufferedImage(inputStream);
+    } catch (IllegalArgumentException e) {
+      // Catch AWT color space errors: https://github.com/android/size-analyzer/issues/9
+      throw new ImageReadException("Error parsing image", e);
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }

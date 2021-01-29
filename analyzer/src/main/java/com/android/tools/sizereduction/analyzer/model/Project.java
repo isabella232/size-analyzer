@@ -67,12 +67,13 @@ public abstract class Project {
     }
     try {
       int defaultMinSdkVersion = parent != null ? parent.getContext().getMinSdkVersion() : 1;
+      int defaultTargetSdkVersion = parent != null ? parent.getContext().getTargetSdkVersion() : 1;
       AndroidPluginVersion androidPluginVersion =
           parent != null ? parent.getContext().getAndroidPluginVersion() : null;
       String content = Files.asCharSource(buildFile, UTF_8).read();
       GradleContext.Builder builder =
           GroovyGradleParser.parseGradleBuildFile(
-              content, defaultMinSdkVersion, androidPluginVersion);
+              content, defaultMinSdkVersion, defaultTargetSdkVersion, androidPluginVersion);
       // try to read the manifest(s) in the project to determine if this project is for an onDemand
       // module.
       File manifestFile = new File(directory, MANIFEST);

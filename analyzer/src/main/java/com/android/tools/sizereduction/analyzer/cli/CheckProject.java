@@ -24,7 +24,6 @@ import com.android.tools.sizereduction.analyzer.suggesters.binaryfiles.WebpSugge
 import com.android.tools.sizereduction.analyzer.suggesters.bundles.BundleSplitSuggester;
 import com.android.tools.sizereduction.analyzer.suggesters.libraries.LibraryEligibleForFeatureSplitSuggester;
 import com.android.tools.sizereduction.analyzer.suggesters.proguard.ProguardSuggester;
-import com.android.tools.sizereduction.analyzer.telemetry.TelemetryLogger;
 import com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.util.List;
@@ -91,13 +90,8 @@ public final class CheckProject implements Callable<Void> {
       return null;
     }
 
-    boolean canSendTelemetry = TelemetryConsentHelper.get().checkForConsent();
     try {
       ImmutableList<Suggestion> suggestions = PROJECT_ANALYZER.analyze(directory);
-
-      if (canSendTelemetry) {
-        TelemetryLogger.get().logResultsForProject(suggestions);
-      }
 
       TerminalInterface.create(
           suggestions,
@@ -107,9 +101,6 @@ public final class CheckProject implements Callable<Void> {
           showFixes)
           .displaySuggestions();
     } catch (Exception e) {
-      if (canSendTelemetry) {
-        TelemetryLogger.get().logErrorForProject(e);
-      }
       throw e;
     }
     return null;

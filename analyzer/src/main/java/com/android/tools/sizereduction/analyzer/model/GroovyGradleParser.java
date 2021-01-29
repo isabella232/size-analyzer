@@ -60,6 +60,7 @@ public final class GroovyGradleParser extends CodeVisitorSupport {
 
   private final List<MethodCallExpression> methodCallStack = new ArrayList<>();
   private int minSdkVersion = -1;
+  private int targetSdkVersion = -1;
   private final Map<String, ProguardConfig.Builder> proguardConfigs = new HashMap<>();
   private final Set<Library> dependencySet = new HashSet<>();
   private final GradleContext.Builder gradleContextBuilder;
@@ -68,11 +69,16 @@ public final class GroovyGradleParser extends CodeVisitorSupport {
       BundleConfigLocation.builder();
   private final String content;
   private int defaultMinSdkVersion = 1;
+  private int defaultTargetSdkVersion = 1;
 
   private GroovyGradleParser(
-      String content, int defaultMinSdkVersion, AndroidPluginVersion defaultAndroidPluginVersion) {
+      String content,
+      int defaultMinSdkVersion,
+      int defaultTargetSdkVersion,
+      AndroidPluginVersion defaultAndroidPluginVersion) {
     this.content = content;
     this.defaultMinSdkVersion = defaultMinSdkVersion;
+    this.defaultTargetSdkVersion = defaultTargetSdkVersion;
     this.gradleContextBuilder =
         GradleContext.builder().setAndroidPluginVersion(defaultAndroidPluginVersion);
   }
@@ -80,12 +86,14 @@ public final class GroovyGradleParser extends CodeVisitorSupport {
   public static GradleContext.Builder parseGradleBuildFile(
       String content,
       int defaultMinSdkVersion,
+      int defaultTargetSdkVersion,
       @Nullable AndroidPluginVersion defaultAndroidPluginVersion) {
     // We need to have an abstract syntax tree, which is what the conversion phase produces,
     // Anything more will try to semantically understand the groovy code.
     List<ASTNode> astNodes = new AstBuilder().buildFromString(CompilePhase.CONVERSION, content);
     GroovyGradleParser parser =
-        new GroovyGradleParser(content, defaultMinSdkVersion, defaultAndroidPluginVersion);
+        new GroovyGradleParser(
+            content, defaultMinSdkVersion, defaultTargetSdkVersion, defaultAndroidPluginVersion);
 
     for (ASTNode node : astNodes) {
       if (node instanceof ClassNode) {
@@ -108,6 +116,7 @@ public final class GroovyGradleParser extends CodeVisitorSupport {
                 .setBundleConfigLocation(bundleConfigLocationBuilder.build())
                 .build())
         .setMinSdkVersion(minSdkVersion > 0 ? minSdkVersion : defaultMinSdkVersion)
+        .setTargetSdkVersion(targetSdkVersion > 0 ? targetSdkVersion : defaultTargetSdkVersion)
         .setLibraryDependencies(dependencySet);
     return gradleContextBuilder;
   }
@@ -184,7 +193,7 @@ public final class GroovyGradleParser extends CodeVisitorSupport {
           if (!(leftPropertyExpression instanceof ConstantExpression)) {
             return;
           }
-          property = ((ConstantExpression) leftPropertyExpression).getText();
+          property = leftPropertyExpression.getText();
           Expression leftObjectExpression =
               ((PropertyExpression) leftExpression).getObjectExpression();
           parentParent = parent;
@@ -209,7 +218,7 @@ public final class GroovyGradleParser extends CodeVisitorSupport {
    * object. Otherwise, it will return null. For instance in `defaultConfig.minSdkVersion 14`,
    * defaultConfig would be a valid parent expression.
    */
-  private String getValidParentString(Expression objectExpression) {
+  private static String getValidParentString(Expression objectExpression) {
     if (objectExpression instanceof PropertyExpression) {
       return ((PropertyExpression) objectExpression).getPropertyAsString();
     } else if (objectExpression instanceof VariableExpression) {
@@ -282,11 +291,18 @@ public final class GroovyGradleParser extends CodeVisitorSupport {
             : ProguardConfig.builder();
     switch (property) {
       case "minSdkVersion":
-        int curMinSdkVersion = getSdkVersion(value);
+        int curMinSdkVersion = getSdkVersion(value, defaultMinSdkVersion);
         minSdkVersion =
             (minSdkVersion > 0 && minSdkVersion < curMinSdkVersion)
                 ? minSdkVersion
                 : curMinSdkVersion;
+        break;
+      case "targetSdkVersion":
+        int curTargetSdkVersion = getSdkVersion(value, defaultTargetSdkVersion);
+        targetSdkVersion =
+            (targetSdkVersion > 0 && targetSdkVersion < curTargetSdkVersion)
+                ? targetSdkVersion
+                : curTargetSdkVersion;
         break;
       case "minifyEnabled":
         proguardConfig.setMinifyEnabled(value.equals("true"));
@@ -378,7 +394,8 @@ public final class GroovyGradleParser extends CodeVisitorSupport {
           // there are other plugins that can be applied, ignore them.
           break;
       }
-    } else if (parent != null && parent.equals("dependencies")
+    } else if (parent != null
+        && parent.equals("dependencies")
         && (statement.equals("implementation")
             || statement.equals("api")
             || statement.equals("compile"))) {
@@ -459,17 +476,17 @@ public final class GroovyGradleParser extends CodeVisitorSupport {
     return Offsets.create(start, end);
   }
 
-  private int getSdkVersion(String value) {
-    int version = defaultMinSdkVersion;
+  private static int getSdkVersion(String value, int defaultSdkVersion) {
+    int version = defaultSdkVersion;
     if (isStringLiteral(value)) {
       String codeName = getStringLiteralValue(value);
       if (codeName != null) {
         if (isNumberString(codeName)) {
-          return getIntLiteralValue(codeName, defaultMinSdkVersion);
+          return getIntLiteralValue(codeName, defaultSdkVersion);
         }
       }
     } else {
-      version = getIntLiteralValue(value, defaultMinSdkVersion);
+      version = getIntLiteralValue(value, defaultSdkVersion);
     }
     return version;
   }

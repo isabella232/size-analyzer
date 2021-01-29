@@ -33,23 +33,25 @@ public abstract class GradleContext implements Context {
     APPLICATION,
     DYNAMIC_FEATURE,
     FEATURE,
-  };
+  }
 
-  public static GradleContext create(int minSdkVersion, boolean onDemand) {
-    return create(minSdkVersion, onDemand, /* embedsWearApk= */ false);
+  public static GradleContext create(int minSdkVersion, int targetSdkVersion, boolean onDemand) {
+    return create(minSdkVersion, targetSdkVersion, onDemand, /* embedsWearApk= */ false);
   }
 
   /** Create Gradle context with minSdkVersion, onDemand and embedsWearApk. */
-  public static GradleContext create(int minSdkVersion, boolean onDemand, boolean embedsWearApk) {
+  public static GradleContext create(
+      int minSdkVersion, int targetSdkVersion, boolean onDemand, boolean embedsWearApk) {
     return builder()
         .setMinSdkVersion(minSdkVersion)
+        .setTargetSdkVersion(targetSdkVersion)
         .setOnDemand(onDemand)
         .setEmbedsWearApk(embedsWearApk)
         .build();
   }
 
-  public static GradleContext create(int minSdkVersion) {
-    return builder().setMinSdkVersion(minSdkVersion).build();
+  public static GradleContext create(int minSdkVersion, int targetSdkVersion) {
+    return builder().setMinSdkVersion(minSdkVersion).setTargetSdkVersion(targetSdkVersion).build();
   }
 
   public static Builder builder() {
@@ -66,6 +68,9 @@ public abstract class GradleContext implements Context {
   /** The min sdk version declared for this project. */
   @Override
   public abstract int getMinSdkVersion();
+
+  /** The target sdk version declared for this project. */
+  public abstract int getTargetSdkVersion();
 
   /** The on demand value declared for this project. */
   @Override
@@ -96,6 +101,9 @@ public abstract class GradleContext implements Context {
 
     /** Set the min sdk version. */
     public abstract Builder setMinSdkVersion(int minSdkVersion);
+
+    /** Set the target sdk version */
+    public abstract Builder setTargetSdkVersion(int targetSdkVersion);
 
     /** Set whether the project/module is an onDemand module. */
     public abstract Builder setOnDemand(boolean onDemand);

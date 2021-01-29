@@ -20,7 +20,6 @@ import com.android.tools.sizereduction.analyzer.AnalyzerMain.VersionProvider;
 import com.android.tools.sizereduction.analyzer.analyzers.Version;
 import com.android.tools.sizereduction.analyzer.cli.CheckBundle;
 import com.android.tools.sizereduction.analyzer.cli.CheckProject;
-import com.android.tools.sizereduction.analyzer.cli.MetricsCommands;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import org.fusesource.jansi.AnsiConsole;
@@ -38,7 +37,6 @@ import picocli.CommandLine.Option;
     subcommands = {
       CheckBundle.class,
       CheckProject.class,
-      MetricsCommands.class,
       HelpCommand.class,
     })
 public class AnalyzerMain implements Callable<Void> {

@@ -127,7 +127,7 @@ public class LargeFilesSuggesterTest {
   public void projectLargeFile_containsOnlyLargeFileSuggestion() {
     fileData = FakeFileData.builder(PROJECT_BIN_FILE).setSize(LARGE_FILE_SIZE).build();
     List<Suggestion> suggestions =
-        new LargeFilesSuggester().processProjectEntry(GradleContext.create(1, false), fileData);
+        new LargeFilesSuggester().processProjectEntry(GradleContext.create(1, 1, false), fileData);
     assertThat(suggestions).hasSize(1);
     assertThat(suggestions)
         .containsExactly(

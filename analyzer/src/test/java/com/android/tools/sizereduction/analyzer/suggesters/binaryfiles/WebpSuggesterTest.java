@@ -62,6 +62,16 @@ public class WebpSuggesterTest {
   }
 
   @Test
+  public void nonConvertible9patch_noSuggestion() {
+    FileData file = FakeFileData.builder("hello.9.png").build();
+    assertThat(
+            new WebpSuggester()
+                .processBundleZipEntry(
+                    BundleContext.create(MIN_SDK_VERSION_SUPPORTING_LOSSLESS_WEBP), file))
+        .isEmpty();
+  }
+
+  @Test
   public void losslessReducibleDrawing_supportedApiLevel_reducesSize() throws Exception {
     FakeWebpConverter fakeConverter = new FakeWebpConverter();
     WebpSuggester webpSuggester = new WebpSuggester(fakeConverter);
@@ -73,7 +83,8 @@ public class WebpSuggesterTest {
 
     List<Suggestion> suggestions =
         webpSuggester.processProjectEntry(
-            GradleContext.create(MIN_SDK_VERSION_SUPPORTING_LOSSLESS_WEBP, false), systemFileData);
+            GradleContext.create(MIN_SDK_VERSION_SUPPORTING_LOSSLESS_WEBP, 1, false),
+            systemFileData);
 
     assertThat(suggestions)
         .containsExactly(

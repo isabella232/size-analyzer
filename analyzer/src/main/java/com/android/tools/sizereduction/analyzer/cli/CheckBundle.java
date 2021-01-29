@@ -26,7 +26,6 @@ import com.android.tools.sizereduction.analyzer.suggesters.bundles.LargeFilesInB
 import com.android.tools.sizereduction.analyzer.suggesters.bundles.UncompressedNativeLibsSuggester;
 import com.android.tools.sizereduction.analyzer.suggesters.libraries.LibraryEligibleForFeatureSplitSuggester;
 import com.android.tools.sizereduction.analyzer.suggesters.proguard.ProguardSuggester;
-import com.android.tools.sizereduction.analyzer.telemetry.TelemetryLogger;
 import com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.util.List;
@@ -85,14 +84,9 @@ public final class CheckBundle implements Callable<Void> {
 
   @Override
   public Void call() {
-    boolean canSendTelemetry = TelemetryConsentHelper.get().checkForConsent();
 
     try {
       ImmutableList<Suggestion> suggestions = BUNDLE_ANALYZER.analyze(bundleFile);
-
-      if (canSendTelemetry) {
-        TelemetryLogger.get().logResultsForBundle(bundleFile, suggestions);
-      }
 
       TerminalInterface.create(
               suggestions,
@@ -100,9 +94,6 @@ public final class CheckBundle implements Callable<Void> {
               displayAll)
           .displaySuggestions();
     } catch (Exception e) {
-      if (canSendTelemetry) {
-        TelemetryLogger.get().logErrorForBundle(e);
-      }
       throw e;
     }
 

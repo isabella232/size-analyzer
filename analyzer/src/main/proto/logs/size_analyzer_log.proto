@@ -6,7 +6,10 @@ option java_package = "com.google.play.bit.proto";
 
 // Records the result of an app size analyzer run on a developer's machine. This
 // will include data from the size analyzer CLI and Android Studio plugins.
+// DEPRECATED: Since the size analyzer plugin will be deprecated.
 message SizeAnalysisLog {
+  option deprecated = true;
+
   // The version of the analyzer library
   string analyzer_version = 1;
 
